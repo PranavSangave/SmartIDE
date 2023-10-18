@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Smart Compiler</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-4bw+/aepP/YC94hEpVNVgiZdgIC5+VKNBQNGCHeKRQN+PtmoHDEXuppvnDJzQIu9"
+      crossorigin="anonymous"
+    />
+    <style>
+      #loading {
+        width: 100%;
+        height: 100vh;
+        background: #fff url("382.gif") no-repeat center;
+        position: fixed;
+        z-index: 9999999;
+        display: none;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="loading"></div>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="#">Smart Code Editor By VIT Pune</a>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarSupportedContent"
+          aria-controls="navbarSupportedContent"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent"></div>
+      </div>
+    </nav>
+
+    <iframe
+      id="oc-editor"
+      frameborder="0"
+      height="600px"
+      src="https://onecompiler.com/embed/java?codeChangeEvent=true&listenToEvents=true"
+      width="100%"
+    >
+    </iframe>
+
+    <!-- Include Bootstrap JS and your custom script -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.0.7/dist/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <!-- Include jQuery for AJAX -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-HwwvtgBNo3bZJJLYd8oVXjrBZt8cqVSpeBNS5n7C8IVInixGAoxmnlMuBnhbgrkm"
+      crossorigin="anonymous"
+    ></script>
+
+    <!-- Handling Script -->
+    <script>
+      function captureCode() {
+        window.onmessage = function (e) {
+          if (e.data && e.data.language) {
+            // console.log(e.data);
+
+            // handle the e.data which contains the code object
+            var content = e.data["files"][0]["content"];
+            var run_status = e.data["result"]["success"];
+
+            // if run_status is false. means error occurs
+            if (run_status == false) {
+              alert("Error occurs, Please wait while we are figuring out the solution!");
+              var error_msg = e.data["result"]["output"];
+
+              // Show the loading div
+              preloader.style.display = "block";
+
+              // Preparing bard prompt
+              var prompt =
+                " Please help me fix the following coding error: \n" +
+                error_msg +
+                "\n\n My code is as follows: \n" +
+                content;
+
+              // SECURE PSID HERE
+              const secure_psid =
+                "ADD_SECURE_PSID_1_FROM_BARD_COOKIES"; // 1. Go on inspect element in Bard website. 2. Go to Application Tab. 3.Click on Cookies and copy secure_psid_1
+                
+              const bardUrl =
+                "https://bard1.p.rapidapi.com/ask?question=" +
+                prompt +
+                "&bard___Secure-1PSID_cookie_value=" +
+                secure_psid +
+                "&bard___Secure-1PSIDTS_cookie_value=" +
+                secure_psid +
+                "&bard___Secure-1PSIDCC_cookie_value= " +
+                secure_psid;
+
+              const rapidApiKey =
+                "ADD_YOUR_RAPID_API_KEY"; // You can get this from here : https://rapidapi.com/yourdevmail/api/bard1/
+
+              async function makeBardRequest() {
+
+                try {
+                  const response = await fetch(bardUrl, {
+                    headers: {
+                      "X-RapidAPI-Host": "bard1.p.rapidapi.com",
+                      "X-RapidAPI-Key": rapidApiKey,
+                    },
+                  });
+                  const bardResponse = await response.json();
+
+                  var solution1 = bardResponse["response"]["drafts"][0];
+                  console.log(bardResponse);
+
+                  // Update the code and hide the loading div when the request is complete
+                  changeCode(content, solution1);
+                } catch (error) {
+                  // Handle errors here
+                  console.error("Bard API request failed:", error);
+                } finally {
+                  // Hide the loading div
+                  preloader.style.display = "none";
+                }
+              }
+
+              makeBardRequest();
+            }
+          }
+        };
+      }
+
+      captureCode();
+    </script>
+
+    <script>
+      function changeCode(primaryProgram, solution) {
+        var iFrame = document.getElementById("oc-editor"); // add an ID for the <iframe tag
+        iFrame.contentWindow.postMessage(
+          {
+            eventType: "populateCode",
+            language: "cpp",
+            files: [
+              {
+                name: "Main.cpp",
+                content: primaryProgram + "\n\n/* " + solution + " */",
+              },
+            ],
+          },
+          "*"
+        );
+      }
+    </script>
+    <script type="text/javascript">
+      var preloader = document.getElementById("loading");
+
+      function loadfunction() {
+        preloader.style.display = "none";
+      }
+    </script>
+  </body>
+</html>
